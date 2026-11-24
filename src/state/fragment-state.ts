@@ -48,7 +48,28 @@ export function encodeStateParamsAsFragment(state: State) {
   // return encodeURIComponent(json);
   return compressString(json);
 }
+/** `/m/<name>` (redirected to `?m=<name>`): fill the fragment from the saved model, unless already edited. */
+async function loadNamedModelIntoFragment() {
+  const name = new URLSearchParams(location.search).get('m');
+  if (!name || location.hash.length > 1) return;
+  const res = await fetch(`/api/models/${encodeURIComponent(name)}`);
+  if (res.ok) history.replaceState(null, '', '#' + await res.text());
+  else console.error(`Could not load model "${name}": ${res.status}`);
+}
+
+/** Saves the current state under `name` and returns its short link. */
+export async function saveNamedModel(state: State, name: string, password: string): Promise<string> {
+  const res = await fetch(`/api/models/${encodeURIComponent(name)}`, {
+    method: 'PUT',
+    headers: {'x-models-password': password},
+    body: await encodeStateParamsAsFragment(state),
+  });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+  return `${location.origin}/m/${encodeURIComponent(name)}`;
+}
+
 export async function readStateFromFragment(): Promise<State | null> {
+  try { await loadNamedModelIntoFragment(); } catch (e) { console.error(e); }
   if (window.location.hash.startsWith('#') && stripEmbedFromFragment(window.location.hash.substring(1)) !== '') {
     try {
       const serialized = stripEmbedFromFragment(window.location.hash.substring(1));

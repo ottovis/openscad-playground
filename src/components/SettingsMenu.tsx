@@ -14,7 +14,7 @@ import { isFramed, resolveMcpSetupUrl } from '../state/embed.ts';
 
 // Build-time define (webpack EnvironmentPlugin); empty unless the deployment serves an MCP endpoint.
 const mcpSetupUrl = resolveMcpSetupUrl(process.env.OPENSCAD_MCP_URL, window.location.href, isFramed());
-import { encodeStateParamsAsFragment } from '../state/fragment-state.ts';
+import { encodeStateParamsAsFragment, saveNamedModel } from '../state/fragment-state.ts';
 
 /** iframe snippet for the current model: `?embed=1` plus the usual URL state fragment. */
 export async function buildEmbedCode(state: State): Promise<string> {
@@ -67,8 +67,33 @@ export default function SettingsMenu({className, style}: {className?: string, st
           },
         },
         {
+          label: 'Save as named link',
+          icon: 'pi pi-link',
+          command: async () => {
+            const name = window.prompt('Model name (letters, digits, - and _):', new URLSearchParams(location.search).get('m') ?? '');
+            if (!name) return;
+            const password = localStorage.getItem('modelsPassword') || window.prompt('Password for saving models:');
+            if (!password) return;
+            const showToast = (severity: any, detail: string, life: number) => toast.current?.show({severity, detail, life});
+            try {
+              const link = await saveNamedModel(state, name.trim(), password);
+              localStorage.setItem('modelsPassword', password);
+              history.replaceState(null, '', `/?m=${encodeURIComponent(name.trim())}${location.hash}`);
+              try {
+                await navigator.clipboard.writeText(link);
+                showToast('success', `Saved. Link copied: ${link}`, 4000);
+              } catch {
+                window.prompt('Saved. Copy the link:', link);
+              }
+            } catch (e) {
+              if (String(e).startsWith('Error: 401')) localStorage.removeItem('modelsPassword');
+              showToast('error', `Save failed: ${e}`, 6000);
+            }
+          },
+        },
+        {
           separator: true
-        },  
+        },
         {
           label: state.view.showAxes ? 'Hide axes' : 'Show axes',
           icon: 'pi pi-asterisk',

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "(command -v zip && command -v unzip) || dnf install -y zip unzip; npm run build:all",
+  "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/m/:name",
+      "destination": "/?m=:name",
+      "permanent": false
+    }
+  ]
+}
