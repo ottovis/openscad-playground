@@ -8,6 +8,7 @@ import { zipArchives } from './fs/zip-archives.ts';
 import { createInitialState } from './state/initial-state.ts';
 import './index.css';
 
+import { inject } from '@vercel/analytics';
 import debug from 'debug';
 import { isInStandaloneMode, registerCustomAppHeightCSSProperty } from './utils.ts';
 import { State, StatePersister } from './state/app-state.ts';
@@ -18,8 +19,11 @@ import type { App as McpApp_App } from '@modelcontextprotocol/ext-apps';
 
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
+
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.min.css";
+
+inject();
 
 const log = debug('app:log');
 
